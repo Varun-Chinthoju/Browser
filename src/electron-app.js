@@ -69,11 +69,54 @@ let views = [];
 let activeViewId = null;
 let nextViewId = 1;
 
+// Ad blocker always enabled
+const adBlockerEnabled = true;
+
+// List of ad URL patterns to block (simple example)
+const adUrlPatterns = [
+  '*://*.doubleclick.net/*',
+  '*://*.googlesyndication.com/*',
+  '*://*.adservice.google.com/*',
+  '*://*.adsafeprotected.com/*',
+  '*://*.adnxs.com/*',
+  '*://*.adsrvr.org/*',
+  '*://*.amazon-adsystem.com/*',
+  '*://*.adroll.com/*',
+  '*://*.advertising.com/*',
+  '*://*.adform.net/*',
+  '*://*.adtech.de/*',
+  '*://*.adition.com/*',
+  '*://*.ads-twitter.com/*',
+  '*://*.admob.com/*',
+  '*://*.ads.yahoo.com/*',
+  '*://*.doubleverify.com/*',
+  '*://*.exponential.com/*',
+  '*://*.openx.net/*',
+  '*://*.rubiconproject.com/*',
+  '*://*.scorecardresearch.com/*',
+  '*://*.taboola.com/*',
+  '*://*.teads.tv/*',
+  '*://*.tradedoubler.com/*',
+  '*://*.yieldmo.com/*',
+];
+
 function getViewBounds() {
   if (!mainWindow) return { x: 0, y: 80, width: 900, height: 520 };
   const [width, height] = mainWindow.getContentSize();
   // Assuming toolbar height 40px and tab bar height 40px
   return { x: 0, y: 80, width: width, height: height - 80 };
+}
+
+function setupAdBlockerForView(view) {
+  const ses = view.webContents.session;
+  ses.webRequest.onBeforeRequest({ urls: adUrlPatterns }, (details, callback) => {
+    if (adBlockerEnabled) {
+      console.log(`Blocked ad request: ${details.url}`);
+      callback({ cancel: true });
+    } else {
+      callback({ cancel: false });
+    }
+  });
 }
 
 function createNewTab(url) {
@@ -90,6 +133,9 @@ function createNewTab(url) {
   const bounds = getViewBounds();
   view.setBounds(bounds);
   view.webContents.loadURL(url || 'https://www.google.com');
+
+  // Setup ad blocker for this view
+  setupAdBlockerForView(view);
 
   // Listen for navigation events to update URL input in renderer
   view.webContents.on('did-navigate', (event, url) => {
