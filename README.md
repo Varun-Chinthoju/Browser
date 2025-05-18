@@ -14,9 +14,7 @@
  ## Installation
  
 
- 1. Download the latest release from the releases page.
- 2. Unzip the file.
- 3. Drag the app to the applications folder.
+ * There is none!
  
 
  ## Usage
