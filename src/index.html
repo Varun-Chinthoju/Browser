@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LeafBrowser</title>
+    <title>Browser</title>
     <style>
         body {
             margin: 0;
@@ -58,8 +58,19 @@
         <button id="navigate"><i class="fas fa-search"></i></button>
         <button id="new-tab"><i class="fas fa-plus"></i></button>
     </div>
-    <div id="tab-bar" style="height: 25px; background-color: #ddd;">
+    <div id="tab-bar" style="height: 25px; background-color: #ddd; display: flex;">
         </div>
-    <script src="renderer.js"></script>
+    <div id="browser-view-container" style="flex: 1;"></div>
+    <script>
+        ipcRenderer.on('new-tab', (event, tabId) => {
+            const tab = document.createElement('div');
+            tab.innerText = `Tab ${tabId}`;
+            tab.style.padding = '5px';
+            tab.style.border = '1px solid #ccc';
+            tab.style.cursor = 'pointer';
+            document.getElementById('tab-bar').appendChild(tab);
+        });
+    </script>
+    <script src="renderer.js" type="module"></script>
 </body>
 </html>
