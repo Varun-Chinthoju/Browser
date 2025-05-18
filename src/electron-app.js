@@ -1,11 +1,12 @@
-const { app, BrowserWindow, ipcMain, BrowserView } = require('electron');
+const { app, BrowserWindow, ipcMain, BrowserView, screen } = require('electron');
 
 let mainWindow;
-let view;
+let currentView;
+let views = [];
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 800,
+        width: 900,
         height: 600,
         webPreferences: {
             nodeIntegration: true,
@@ -13,33 +14,49 @@ function createWindow() {
         }
     });
 
-    view = new BrowserView();
-    mainWindow.setBrowserView(view);
-    view.setBounds({ x: 0, y: 0, width: 2560, height: 1400 });
-    view.webContents.loadURL('https://www.youtube.com'); // Load a default URL
+    mainWindow.loadFile('src/index.html');
+    mainWindow.maximize();
+
+    const { width, height } = screen.getPrimaryDisplay().bounds;
+
+    function createNewTab() {
+        const view = new BrowserView();
+        mainWindow.addBrowserView(view);
+        view.setBounds({ x: 0, y: 60, width: width, height: height - 60 });
+        view.webContents.loadURL('https://www.google.com'); // Load a default URL
+        views.push(view);
+        return view;
+    }
+
+    currentView = createNewTab();
 
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
 
     mainWindow.webContents.openDevTools();
+
+    ipcMain.on('new-tab', () => {
+        let newTab = createNewTab();
+        currentView = newTab;
+    });
 }
 
 app.whenReady().then(createWindow);
 
 // IPC for navigation
 ipcMain.on('navigate', (event, url) => {
-    view.webContents.loadURL(url);
+    currentView.webContents.loadURL(url);
 });
 
 ipcMain.on('go-back', () => {
-    view.webContents.goBack();
+    currentView.webContents.goBack();
 });
 
 ipcMain.on('go-forward', () => {
-    view.webContents.goForward();
+    currentView.webContents.goForward();
 });
 
 ipcMain.on('reload', () => {
-    view.webContents.reload();
+    currentView.webContents.reload();
 });

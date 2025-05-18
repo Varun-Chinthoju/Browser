@@ -10,49 +10,56 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
         }
         #toolbar {
             display: flex;
-            padding: 10px;
-            background-color: #f1f1f1;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #d0d0d0;
         }
         #url-input {
             flex: 1;
             padding: 5px;
             margin-right: 5px;
+            border-radius: 20px;
+            border: 1px solid #d0d0d0;
+            background-color: #fff;
         }
         button {
             padding: 5px 10px;
+            border-radius: 5px;
+            background-color: #fff;
+            border: 1px solid #d0d0d0;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        button:hover {
+            background-color: #e0e0e0;
+        }
+        #navigate {
+            color: #fff;
+            background-color: #D47800;
+            border: 1px solid #D47800;
+        }
+        #navigate:hover {
+            background-color: #b36500;
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
     <div id="toolbar">
-        <button id="back">Back</button>
-        <button id="forward">Forward</button>
-        <button id="reload">Reload</button>
+        <button id="back"><i class="fas fa-arrow-left"></i></button>
+        <button id="forward"><i class="fas fa-arrow-right"></i></button>
+        <button id="reload"><i class="fas fa-sync-alt"></i></button>
         <input type="text" id="url-input" placeholder="Enter URL" />
-        <button id="navigate">Go</button>
+        <button id="navigate"><i class="fas fa-search"></i></button>
+        <button id="new-tab"><i class="fas fa-plus"></i></button>
     </div>
-    <script>
-        const { ipcRenderer } = require('electron');
-
-        document.getElementById('navigate').addEventListener('click', () => {
-            const url = document.getElementById('url-input').value;
-            ipcRenderer.send('navigate', url);
-        });
-
-        document.getElementById('back').addEventListener('click', () => {
-            ipcRenderer.send('go-back');
-        });
-
-        document.getElementById('forward').addEventListener('click', () => {
-            ipcRenderer.send('go-forward');
-        });
-
-        document.getElementById('reload').addEventListener('click', () => {
-            ipcRenderer.send('reload');
-        });
-    </script>
+    <div id="tab-bar" style="height: 25px; background-color: #ddd;">
+        </div>
+    <script src="renderer.js"></script>
 </body>
 </html>
