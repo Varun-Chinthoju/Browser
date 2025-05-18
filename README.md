@@ -22,9 +22,9 @@
  ## Usage
  
 
- 1. Open the app.
- 2. Enter the website you want to visit.
- 3. Click the go button.
+ 1. Open vscode .
+ 2. Enter the website url you want to visit.
+ 3. go to terminal and run "npx electron src/electron-app.js".
  
 
  ## Contributing
