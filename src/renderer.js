@@ -14,7 +14,7 @@ function createTabElement(tabId) {
     tab.dataset.tabId = tabId;
 
     const title = document.createElement('span');
-    title.innerText = `Tab ${tabId}`;
+    title.innerText = 'New Tab';
     title.classList.add('tab-title');
     tab.appendChild(title);
 
