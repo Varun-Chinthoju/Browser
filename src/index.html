@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Browser</title>
     <style>
         body {
@@ -10,67 +10,164 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+                Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+            background-color: #fff;
+            color: #333;
+        }
+        #tab-bar {
+            height: 36px;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+            border-bottom: 1px solid #ddd;
+            box-shadow: inset 0 -1px 0 #ccc;
+        }
+        .tab {
+            padding: 6px 14px;
+            margin-right: 6px;
+            border-radius: 6px 6px 0 0;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-bottom: none;
+            cursor: pointer;
+            user-select: none;
+            font-weight: 500;
+            color: #495057;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+        .tab:hover {
+            background-color: #dee2e6;
+        }
+        .tab.active {
+            background-color: #fff;
+            border-bottom: 1px solid #fff;
+            font-weight: 700;
+            color: #212529;
+            box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
         }
         #toolbar {
             display: flex;
-            padding: 5px;
-            background-color: #f0f0f0;
-            border-bottom: 1px solid #d0d0d0;
+            padding: 6px 10px;
+            background-color: #f1f3f5;
+            border-bottom: 1px solid #ddd;
+            align-items: center;
         }
         #url-input {
             flex: 1;
-            padding: 5px;
-            margin-right: 5px;
+            padding: 6px 12px;
+            margin-right: 8px;
             border-radius: 20px;
-            border: 1px solid #d0d0d0;
+            border: 1px solid #ced4da;
             background-color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: box-shadow 0.2s ease;
+        }
+        #url-input:focus {
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+            border-color: #0d6efd;
         }
         button {
-            padding: 5px 10px;
-            border-radius: 5px;
+            padding: 6px 12px;
+            border-radius: 6px;
             background-color: #fff;
-            border: 1px solid #d0d0d0;
+            border: 1px solid #ced4da;
             cursor: pointer;
-            margin-right: 5px;
+            margin-right: 6px;
+            font-size: 14px;
+            color: #495057;
+            transition: background-color 0.2s ease;
         }
         button:hover {
-            background-color: #e0e0e0;
+            background-color: #e9ecef;
         }
         #navigate {
             color: #fff;
-            background-color: #D47800;
-            border: 1px solid #D47800;
+            background-color: #0d6efd;
+            border: 1px solid #0d6efd;
         }
         #navigate:hover {
-            background-color: #b36500;
+            background-color: #0b5ed7;
+        }
+        /* New styles for tab close button */
+        .tab-close {
+            background: transparent;
+            border: none;
+            color: #888;
+            font-weight: bold;
+            font-size: 16px;
+            line-height: 1;
+            margin-left: 8px;
+            cursor: pointer;
+            user-select: none;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .tab-close:hover {
+            color: #fff;
+            background-color: #dc3545;
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+        integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+    />
 </head>
 <body>
+    <div id="tab-bar"></div>
     <div id="toolbar">
         <button id="back"><i class="fas fa-arrow-left"></i></button>
         <button id="forward"><i class="fas fa-arrow-right"></i></button>
         <button id="reload"><i class="fas fa-sync-alt"></i></button>
-        <input type="text" id="url-input" placeholder="Enter URL" />
+        <input type="text" id="url-input" placeholder="Enter URL or search" />
         <button id="navigate"><i class="fas fa-search"></i></button>
         <button id="new-tab"><i class="fas fa-plus"></i></button>
     </div>
-    <div id="tab-bar" style="height: 25px; background-color: #ddd; display: flex;">
-        </div>
     <div id="browser-view-container" style="flex: 1;"></div>
     <script>
-        ipcRenderer.on('new-tab', (event, tabId) => {
-            const tab = document.createElement('div');
-            tab.innerText = `Tab ${tabId}`;
-            tab.style.padding = '5px';
-            tab.style.border = '1px solid #ccc';
-            tab.style.cursor = 'pointer';
-            document.getElementById('tab-bar').appendChild(tab);
+        const { ipcRenderer } = require('electron');
+
+        document.getElementById('navigate').addEventListener('click', () => {
+            const url = document.getElementById('url-input').value;
+            ipcRenderer.send('navigate', url);
+        });
+
+        document.getElementById('back').addEventListener('click', () => {
+            ipcRenderer.send('go-back');
+        });
+
+        document.getElementById('forward').addEventListener('click', () => {
+            ipcRenderer.send('go-forward');
+        });
+
+        document.getElementById('reload').addEventListener('click', () => {
+            ipcRenderer.send('reload');
+        });
+
+        document.getElementById('new-tab').addEventListener('click', () => {
+            ipcRenderer.send('new-tab');
+        });
+
+        // Support pressing Enter key in the URL input to navigate
+        document.getElementById('url-input').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                const url = event.target.value;
+                ipcRenderer.send('navigate', url);
+            }
         });
     </script>
-    <script src="renderer.js" type="module"></script>
 </body>
 </html>
