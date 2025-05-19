@@ -1,135 +1,207 @@
-const { ipcRenderer } = require('electron');
-
+const { ipcRenderer, remote } = require('electron');
 const tabBar = document.getElementById('tab-bar');
 const urlInput = document.getElementById('url-input');
 const navigateBtn = document.getElementById('navigate');
 
 let activeTabId = null;
 const tabs = new Map();
-const urlInputValues = new Map(); // Map to save URL input per tab
+const urlInputValues = new Map();
+const tabTitles = new Map(); // Store tab titles to update dynamically
 
+// Create a tab DOM element
 function createTabElement(tabId) {
-    const tab = document.createElement('div');
-    tab.classList.add('tab');
-    tab.dataset.tabId = tabId;
+  const tab = document.createElement('div');
+  tab.classList.add('tab');
+  tab.dataset.tabId = tabId;
 
-    const title = document.createElement('span');
-    title.innerText = 'New Tab';
-    title.classList.add('tab-title');
-    tab.appendChild(title);
+  const title = document.createElement('span');
+  title.innerText = 'New Tab';
+  title.classList.add('tab-title');
+  tab.appendChild(title);
 
-    const closeBtn = document.createElement('button');
-    closeBtn.innerText = '×';
-    closeBtn.classList.add('tab-close');
-    tab.appendChild(closeBtn);
+  const closeBtn = document.createElement('button');
+  closeBtn.innerText = '×';
+  closeBtn.classList.add('tab-close');
+  tab.appendChild(closeBtn);
 
-    // Click to switch tab
-    tab.addEventListener('click', (e) => {
-        if (e.target === closeBtn) return; // Ignore if close button clicked
-        if (activeTabId === tabId) return;
-        ipcRenderer.send('switch-tab', tabId);
-    });
+  // Click to switch tab
+  tab.addEventListener('click', (e) => {
+    if (e.target === closeBtn) return; // Ignore close button clicks
+    if (activeTabId === tabId) return;
+    ipcRenderer.send('switch-tab', tabId);
+  });
 
-    // Close tab on close button click
-    closeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        ipcRenderer.send('close-tab', tabId);
-    });
+  // Close tab on close button click
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    ipcRenderer.send('close-tab', tabId);
+  });
 
-    return tab;
+  return tab;
 }
 
+// Set active tab and update UI
 function setActiveTab(tabId) {
-    if (activeTabId !== null) {
-        const prevTab = tabs.get(activeTabId);
-        if (prevTab) prevTab.classList.remove('active');
-        // Save current urlInput value for previous tab
-        urlInputValues.set(activeTabId, urlInput.value);
-    }
-    const newTab = tabs.get(tabId);
-    if (newTab) newTab.classList.add('active');
-    activeTabId = tabId;
+  if (activeTabId !== null) {
+    const prevTab = tabs.get(activeTabId);
+    if (prevTab) prevTab.classList.remove('active');
+    // Save current urlInput value for previous tab
+    urlInputValues.set(activeTabId, urlInput.value);
+  }
+  const newTab = tabs.get(tabId);
+  if (newTab) newTab.classList.add('active');
+  activeTabId = tabId;
 
-    // Restore urlInput value for new active tab
-    if (urlInputValues.has(tabId)) {
-        urlInput.value = urlInputValues.get(tabId);
-    } else {
-        urlInput.value = '';
-    }
+  // Restore urlInput value for the new active tab
+  urlInput.value = urlInputValues.get(tabId) || '';
+
+  // Scroll active tab into view smoothly
+  newTab.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+
+  // Update URL bar and tab title if we have saved info
+  if (tabTitles.has(tabId)) {
+    const titleSpan = newTab.querySelector('.tab-title');
+    titleSpan.innerText = tabTitles.get(tabId);
+  }
 }
 
+// Update tab title dynamically
+ipcRenderer.on('update-tab-title', (event, { tabId, title }) => {
+  tabTitles.set(tabId, title);
+  const tab = tabs.get(tabId);
+  if (tab) {
+    const titleSpan = tab.querySelector('.tab-title');
+    titleSpan.innerText = title;
+  }
+});
+
+// New tab event: create tab element & activate
 ipcRenderer.on('new-tab', (event, tabId) => {
-    if (tabs.has(tabId)) return;
-    const tab = createTabElement(tabId);
-    tabs.set(tabId, tab);
-    tabBar.appendChild(tab);
-    setActiveTab(tabId);
+  if (tabs.has(tabId)) return;
+  const tab = createTabElement(tabId);
+  tabs.set(tabId, tab);
+  tabBar.appendChild(tab);
+  setActiveTab(tabId);
 });
 
+// Switch tab event
 ipcRenderer.on('switch-tab', (event, tabId) => {
-    setActiveTab(tabId);
+  setActiveTab(tabId);
 });
 
+// Close tab event
 ipcRenderer.on('close-tab', (event, tabId) => {
-    const tab = tabs.get(tabId);
-    if (tab) {
-        tabBar.removeChild(tab);
-        tabs.delete(tabId);
-        urlInputValues.delete(tabId); // Remove saved URL input for closed tab
-        if (activeTabId === tabId) {
-            // Set active tab to another tab if any
-            const remainingTabs = Array.from(tabs.keys());
-            if (remainingTabs.length > 0) {
-                ipcRenderer.send('switch-tab', remainingTabs[0]);
-            } else {
-                activeTabId = null;
-                urlInput.value = '';
-            }
-        }
+  const tab = tabs.get(tabId);
+  if (tab) {
+    tabBar.removeChild(tab);
+    tabs.delete(tabId);
+    urlInputValues.delete(tabId);
+    tabTitles.delete(tabId);
+
+    if (activeTabId === tabId) {
+      const remainingTabs = Array.from(tabs.keys());
+      if (remainingTabs.length > 0) {
+        ipcRenderer.send('switch-tab', remainingTabs[0]);
+      } else {
+        activeTabId = null;
+        urlInput.value = '';
+      }
     }
+  }
 });
 
-// Existing navigation handlers
+// Navigation handlers
 navigateBtn.addEventListener('click', () => {
-    const url = urlInput.value;
-    ipcRenderer.send('navigate', url);
+  ipcRenderer.send('navigate', urlInput.value);
 });
 
 document.getElementById('back').addEventListener('click', () => {
-    ipcRenderer.send('go-back');
+  ipcRenderer.send('go-back');
 });
 
 document.getElementById('forward').addEventListener('click', () => {
-    ipcRenderer.send('go-forward');
+  ipcRenderer.send('go-forward');
 });
 
 document.getElementById('reload').addEventListener('click', () => {
-    ipcRenderer.send('reload');
+  ipcRenderer.send('reload');
 });
 
 document.getElementById('new-tab').addEventListener('click', () => {
-    ipcRenderer.send('new-tab');
+  ipcRenderer.send('new-tab');
 });
 
-// Listen for URL update events to update the URL input field and save per tab
+// Update URL input when page URL changes
 ipcRenderer.on('update-url', (event, url) => {
-    urlInput.value = url;
-    if (activeTabId !== null) {
-        urlInputValues.set(activeTabId, url);
-    }
+  urlInput.value = url;
+  if (activeTabId !== null) {
+    urlInputValues.set(activeTabId, url);
+  }
 });
 
-// Support pressing Enter key in the URL input to trigger navigation
+// Enter key triggers navigation
 urlInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        const url = urlInput.value;
-        ipcRenderer.send('navigate', url);
-    }
+  if (event.key === 'Enter') {
+    ipcRenderer.send('navigate', urlInput.value);
+  }
 });
 
-// Save urlInput changes on input event to keep state updated
+// Save URL input as user types
 urlInput.addEventListener('input', () => {
+  if (activeTabId !== null) {
+    urlInputValues.set(activeTabId, urlInput.value);
+  }
+});
+
+// Keyboard shortcuts (Ctrl+T = new tab, Ctrl+W = close tab)
+window.addEventListener('keydown', (event) => {
+  if (event.ctrlKey && event.key.toLowerCase() === 't') {
+    ipcRenderer.send('new-tab');
+    event.preventDefault();
+  }
+  if (event.ctrlKey && event.key.toLowerCase() === 'w') {
     if (activeTabId !== null) {
-        urlInputValues.set(activeTabId, urlInput.value);
+      ipcRenderer.send('close-tab', activeTabId);
     }
+    event.preventDefault();
+  }
+});
+
+// Context menu for tabs (right-click)
+tabBar.addEventListener('contextmenu', (event) => {
+  event.preventDefault();
+  const targetTab = event.target.closest('.tab');
+  if (!targetTab) return;
+
+  const tabId = Number(targetTab.dataset.tabId);
+
+  const menu = new remote.Menu();
+
+  menu.append(new remote.MenuItem({
+    label: 'Close Tab',
+    click: () => {
+      ipcRenderer.send('close-tab', tabId);
+    }
+  }));
+
+  menu.append(new remote.MenuItem({
+    label: 'Close Other Tabs',
+    click: () => {
+      const allTabs = Array.from(tabs.keys());
+      allTabs.forEach(id => {
+        if (id !== tabId) {
+          ipcRenderer.send('close-tab', id);
+        }
+      });
+    }
+  }));
+
+  menu.append(new remote.MenuItem({
+    label: 'New Tab',
+    click: () => {
+      ipcRenderer.send('new-tab');
+    }
+  }));
+
+  menu.popup({ window: remote.getCurrentWindow() });
 });

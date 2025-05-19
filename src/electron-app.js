@@ -2,6 +2,9 @@ const { app, BrowserWindow, ipcMain, BrowserView, screen } = require('electron')
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+const { verifyLicense } = require('./verify-license.js');
+
 
 let port = 8080;
 
@@ -162,7 +165,17 @@ function updateViewBounds() {
   });
 }
 
-function createWindow() {
+async function createWindow() {
+  const deviceId = os.hostname(); // Use the device hostname as the ID
+  const licenseKey = "ABCDEF1234567890"; // Replace with the actual license key
+
+  try {
+      const result = await verifyLicense(licenseKey, deviceId);
+      if (!result.valid) {
+          console.error(result.message);
+          app.quit();
+          return;
+      }
   mainWindow = new BrowserWindow({
     width: 900,
     height: 600,
@@ -237,6 +250,13 @@ function createWindow() {
       mainWindow.webContents.send('close-tab', tabId);
     }
   });
+    mainWindow.loadFile("index.html");
+    mainWindow.maximize();
+    console.log("License verified successfully!");
+  } catch (error) {
+    console.error("Error verifying license:", error);
+    app.quit();
+}
 }
 
 app.whenReady().then(createWindow);
