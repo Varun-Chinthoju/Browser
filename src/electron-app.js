@@ -9,7 +9,17 @@ const { verifyLicense } = require('./verify-license.js');
 let port = 8080;
 
 const server = http.createServer((req, res) => {
-  const filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
+  let filePath = path.resolve(__dirname, req.url === '/' ? 'index.html' : req.url);
+  try {
+    filePath = fs.realpathSync(filePath);
+    if (!filePath.startsWith(__dirname)) {
+      throw new Error('Access outside of root directory is not allowed');
+    }
+  } catch (err) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Forbidden: Invalid file path');
+    return;
+  }
   const extname = path.extname(filePath);
   let contentType = 'text/html';
 
