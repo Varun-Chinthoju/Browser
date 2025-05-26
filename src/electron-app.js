@@ -139,8 +139,10 @@ function createNewTab(url) {
       nodeIntegration: true,
       contextIsolation: false,
       webSecurity: false,
+      preload: require('path').join(__dirname, 'poki-ad-blocker.js'),
     },
   });
+  
 
   mainWindow.addBrowserView(view);
   const bounds = getViewBounds();
@@ -200,7 +202,7 @@ async function createWindow() {
   mainWindow.loadURL(`http://127.0.0.1:${port}`);
   mainWindow.maximize();
 
-  activeViewId = createNewTab(`http://127.0.0.1:${port}`);
+  activeViewId = createNewTab('https://www.google.com');
 
   // Remove existing listeners before adding new ones to prevent memory leaks
   mainWindow.removeAllListeners('closed');
@@ -217,7 +219,7 @@ async function createWindow() {
   mainWindow.webContents.openDevTools();
 
   ipcMain.on('new-tab', (event) => {
-    const newTabId = createNewTab(`http://127.0.0.1:${port}`);
+    const newTabId = createNewTab('https://www.google.com');
     mainWindow.webContents.send('new-tab', newTabId);
     updateViewBounds();
   });
@@ -260,9 +262,8 @@ async function createWindow() {
       mainWindow.webContents.send('close-tab', tabId);
     }
   });
-    mainWindow.loadFile("index.html");
-    mainWindow.maximize();
-    console.log("License verified successfully!");
+      // Removed redundant loadFile and maximize calls to prevent overriding loaded URL
+      console.log("License verified successfully!");
   } catch (error) {
     console.error("Error verifying license:", error);
     app.quit();
@@ -272,8 +273,13 @@ async function createWindow() {
 app.whenReady().then(createWindow);
 
 ipcMain.on('navigate', (event, input) => {
+  console.log(`Navigate event received with input: ${input}`);
+  console.log(`Current activeViewId: ${activeViewId}`);
   const activeView = views.find((v) => v.id === activeViewId)?.view;
-  if (!activeView) return;
+  if (!activeView) {
+    console.log('No active view found for navigation.');
+    return;
+  }
 
   const tlds = ['.com', '.net', '.org', '.io', '.gov', '.edu', '.co', '.us', '.uk'];
 
@@ -294,6 +300,7 @@ ipcMain.on('navigate', (event, input) => {
     urlToLoad = `https://www.google.com/search?q=${query}`;
   }
 
+  console.log(`Loading URL: ${urlToLoad}`);
   activeView.webContents.loadURL(urlToLoad);
 });
 
@@ -311,3 +318,4 @@ ipcMain.on('reload', () => {
   const activeView = views.find((v) => v.id === activeViewId)?.view;
   activeView?.webContents.reload();
 });
+module.exports = { createWindow };
