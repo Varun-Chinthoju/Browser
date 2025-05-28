@@ -1,7 +1,7 @@
 # Screen Time Browser
  
 
- A browser for kids who's parents gave them apple screen time.
+ A browser for kids who's parents gave them screen time.
  
 
  ## Features
