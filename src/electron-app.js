@@ -179,7 +179,7 @@ function updateViewBounds() {
 
 async function createWindow() {
   const deviceId = os.hostname(); // Use the device hostname as the ID
-  const licenseKey = "ABCDEF1234567890"; // Replace with the actual license key
+  const licenseKey = "DEV-FREE-ACCESS-123"; // Replace with the actual license key
 
   try {
       const result = await verifyLicense(licenseKey, deviceId);
@@ -202,8 +202,9 @@ async function createWindow() {
   mainWindow.loadURL(`http://127.0.0.1:${port}`);
   mainWindow.maximize();
 
-  activeViewId = createNewTab('https://www.google.com');
-
+  const newTabId = createNewTab('https://www.google.com');
+  mainWindow.webContents.send('new-tab', newTabId);
+  updateViewBounds();
   // Remove existing listeners before adding new ones to prevent memory leaks
   mainWindow.removeAllListeners('closed');
   mainWindow.removeAllListeners('resize');
@@ -217,7 +218,7 @@ async function createWindow() {
   });
 
   mainWindow.webContents.openDevTools();
-
+  
   ipcMain.on('new-tab', (event) => {
     const newTabId = createNewTab('https://www.google.com');
     mainWindow.webContents.send('new-tab', newTabId);
