@@ -19,19 +19,6 @@ function createTabElement(tabId) {
   title.classList.add('tab-title');
   tab.appendChild(title);
 
-  // Mute button
-  const muteBtn = document.createElement('button');
-  muteBtn.classList.add('tab-mute');
-  muteBtn.title = 'Mute/Unmute Tab';
-  muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
-  tab.appendChild(muteBtn);
-
-  muteBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    console.log(`Renderer: mute button clicked for tabId ${tabId}`);
-    ipcRenderer.send('toggle-mute-tab', tabId);
-  });
-
   const closeBtn = document.createElement('button');
   closeBtn.innerText = '×';
   closeBtn.classList.add('tab-close');
@@ -39,7 +26,7 @@ function createTabElement(tabId) {
 
   // Click to switch tab
   tab.addEventListener('click', (e) => {
-    if (e.target === closeBtn || e.target === muteBtn) return; // Ignore close and mute button clicks
+    if (e.target === closeBtn) return; // Ignore close button clicks
     if (activeTabId === tabId) return;
     ipcRenderer.send('switch-tab', tabId);
   });
@@ -145,46 +132,15 @@ document.getElementById('new-tab').addEventListener('click', () => {
 });
 
 // Toolbar mute button event
-document.getElementById('toggle-mute').addEventListener('click', () => {
-  if (activeTabId !== null) {
-    ipcRenderer.send('toggle-mute-tab', activeTabId);
-  }
-});
+const toggleMuteBtn = document.getElementById('toggle-mute');
+if (toggleMuteBtn) {
+  toggleMuteBtn.remove();
+}
 
-// Update toolbar mute button UI
-ipcRenderer.on('update-tab-muted', (event, { tabId, muted }) => {
-  if (tabId === activeTabId) {
-    const muteBtn = document.getElementById('toggle-mute');
-    if (muted) {
-      muteBtn.classList.add('active');
-      muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
-    } else {
-      muteBtn.classList.remove('active');
-      muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
-    }
-  }
-});
-
-// Update toolbar mute button when active tab changes
-ipcRenderer.on('switch-tab', (event, tabId) => {
-  activeTabId = tabId;
-  // Request mute state update for new active tab
-  ipcRenderer.send('request-mute-state', tabId);
-});
-
-// Listen for mute state response from main process
-ipcRenderer.on('response-mute-state', (event, { tabId, muted }) => {
-  if (tabId === activeTabId) {
-    const muteBtn = document.getElementById('toggle-mute');
-    if (muted) {
-      muteBtn.classList.add('active');
-      muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
-    } else {
-      muteBtn.classList.remove('active');
-      muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
-    }
-  }
-});
+// Remove all mute related ipcRenderer listeners
+ipcRenderer.removeAllListeners('update-tab-muted');
+ipcRenderer.removeAllListeners('response-mute-state');
+ipcRenderer.removeAllListeners('switch-tab');
 
 // Update URL input when page URL changes
 ipcRenderer.on('update-url', (event, url) => {
