@@ -82,8 +82,10 @@ let views = [];
 let activeViewId = null;
 let nextViewId = 1;
 
-// Ad blocker always enabled
-const adBlockerEnabled = true;
+// Map to store mute state per tabId
+const mutedTabs = new Map();
+
+let adBlockerEnabled = true;
 
 // List of ad URL patterns to block (simple example)
 const adUrlPatterns = [
@@ -111,6 +113,43 @@ const adUrlPatterns = [
   '*://*.teads.tv/*',
   '*://*.tradedoubler.com/*',
   '*://*.yieldmo.com/*',
+  '*://*.ads.linkedin.com/*',
+  '*://*.adservice.google.co.uk/*',
+  '*://*.pixel.wp.com/*',
+  '*://*.quantserve.com/*',
+  '*://*.scorecardresearch.com/*',
+  '*://*.zedo.com/*',
+  '*://*.outbrain.com/*',
+  '*://*.criteo.com/*',
+  '*://*.mathtag.com/*',
+  '*://*.taboola.com/*',
+  '*://*.revcontent.com/*',
+  '*://*.adform.net/*',
+  '*://*.adnxs.com/*',
+  '*://*.openx.net/*',
+  '*://*.pubmatic.com/*',
+  '*://*.contextweb.com/*',
+  '*://*.casalemedia.com/*',
+  '*://*.advertising.com/*',
+  '*://*.adtech.de/*',
+  '*://*.adroll.com/*',
+  '*://*.adsrvr.org/*',
+  '*://*.admob.com/*',
+  '*://*.adsafeprotected.com/*',
+  '*://*.exponential.com/*',
+  '*://*.tribalfusion.com/*',
+  '*://*.yieldmo.com/*',
+  '*://*.adblade.com/*',
+  '*://*.adcolony.com/*',
+  '*://*.adform.net/*',
+  '*://*.adnxs.com/*',
+  '*://*.adsrvr.org/*',
+  '*://*.ads-twitter.com/*',
+  '*://*.adsafeprotected.com/*',
+  '*://*.adtech.de/*',
+  '*://*.advertising.com/*',
+  '*://*.advertising.com/*',
+  '*://*.advertising.com/*',
 ];
 
 function getViewBounds() {
@@ -131,6 +170,14 @@ function setupAdBlockerForView(view) {
     }
   });
 }
+
+ipcMain.on('toggle-adblocker', (event) => {
+  adBlockerEnabled = !adBlockerEnabled;
+  console.log(`AdBlocker enabled: ${adBlockerEnabled}`);
+  if (mainWindow) {
+    mainWindow.webContents.send('adblocker-status', adBlockerEnabled);
+  }
+});
 
 function createNewTab(url) {
   const viewId = nextViewId++;
@@ -233,6 +280,9 @@ async function createWindow() {
         mainWindow.addBrowserView(view);
         view.setBounds(getViewBounds());
         activeViewId = id;
+        // Apply mute state if any
+        const muted = mutedTabs.get(id) || false;
+        view.webContents.setAudioMuted(muted);
       } else {
         mainWindow.removeBrowserView(view);
       }
@@ -250,6 +300,9 @@ async function createWindow() {
           mainWindow.addBrowserView(view);
           view.setBounds(getViewBounds());
           activeViewId = id;
+          // Apply mute state if any
+          const muted = mutedTabs.get(id) || false;
+          view.webContents.setAudioMuted(muted);
         } else {
           mainWindow.removeBrowserView(view);
         }
@@ -264,6 +317,7 @@ async function createWindow() {
       const { view } = views[index];
       mainWindow.removeBrowserView(view);
       views.splice(index, 1);
+      mutedTabs.delete(tabId);
 
       if (activeViewId === tabId) {
         if (views.length > 0) {
@@ -337,4 +391,26 @@ ipcMain.on('reload', () => {
   const activeView = views.find((v) => v.id === activeViewId)?.view;
   activeView?.webContents.reload();
 });
+ipcMain.on('toggle-mute-tab', (event, tabId) => {
+  console.log(`Main: toggle-mute-tab received for tabId ${tabId}`);
+  const tab = views.find(v => v.id === tabId);
+  if (tab) {
+    const currentMuted = mutedTabs.get(tabId) || false;
+    const newMuted = !currentMuted;
+    mutedTabs.set(tabId, newMuted);
+    tab.view.webContents.setAudioMuted(newMuted);
+    console.log(`Tab ${tabId} mute toggled to ${newMuted}`);
+    if (mainWindow) {
+      mainWindow.webContents.send('update-tab-muted', { tabId, muted: newMuted });
+    }
+  } else {
+    console.log(`Tab with id ${tabId} not found`);
+  }
+});
+
+ipcMain.on('request-mute-state', (event, tabId) => {
+  const muted = mutedTabs.get(tabId) || false;
+  event.sender.send('response-mute-state', { tabId, muted });
+});
+
 module.exports = { createWindow };
