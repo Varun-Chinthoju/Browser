@@ -254,6 +254,11 @@ async function createWindow() {
   mainWindow.loadURL(`http://127.0.0.1:${port}`);
   mainWindow.maximize();
 
+  // Send initial adblocker status to renderer
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('adblocker-status', adBlockerEnabled);
+  });
+
   const newTabId = createNewTab('https://www.google.com');
   mainWindow.webContents.send('new-tab', newTabId);
   updateViewBounds();
@@ -269,7 +274,7 @@ async function createWindow() {
     updateViewBounds();
   });
 
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
   
   ipcMain.on('new-tab', (event) => {
     const newTabId = createNewTab('https://www.google.com');
