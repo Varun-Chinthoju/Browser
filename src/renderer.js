@@ -131,6 +131,17 @@ document.getElementById('new-tab').addEventListener('click', () => {
   ipcRenderer.send('new-tab');
 });
 
+// Toolbar mute button event
+const toggleMuteBtn = document.getElementById('toggle-mute');
+if (toggleMuteBtn) {
+  toggleMuteBtn.remove();
+}
+
+// Remove all mute related ipcRenderer listeners
+ipcRenderer.removeAllListeners('update-tab-muted');
+ipcRenderer.removeAllListeners('response-mute-state');
+ipcRenderer.removeAllListeners('switch-tab');
+
 // Update URL input when page URL changes
 ipcRenderer.on('update-url', (event, url) => {
   urlInput.value = url;
@@ -184,6 +195,8 @@ tabBar.addEventListener('contextmenu', (event) => {
     }
   }));
 
+  // Removed the right-click mute menu item as mute button is added on tabs
+
   menu.append(new remote.MenuItem({
     label: 'Close Other Tabs',
     click: () => {
@@ -204,4 +217,25 @@ tabBar.addEventListener('contextmenu', (event) => {
   }));
 
   menu.popup({ window: remote.getCurrentWindow() });
+});
+
+// Update tab muted state UI
+ipcRenderer.on('update-tab-muted', (event, { tabId, muted }) => {
+  const tab = tabs.get(tabId);
+  if (tab) {
+    const muteBtn = tab.querySelector('.tab-mute i');
+    if (muted) {
+      tab.classList.add('muted');
+      if (muteBtn) {
+        muteBtn.classList.remove('fa-volume-up');
+        muteBtn.classList.add('fa-volume-mute');
+      }
+    } else {
+      tab.classList.remove('muted');
+      if (muteBtn) {
+        muteBtn.classList.remove('fa-volume-mute');
+        muteBtn.classList.add('fa-volume-up');
+      }
+    }
+  }
 });
