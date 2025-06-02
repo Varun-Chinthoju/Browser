@@ -142,6 +142,11 @@ function createNewTab(url) {
       preload: require('path').join(__dirname, 'poki-ad-blocker.js'),
     },
   });
+
+  // Log loading failures for diagnosis
+  view.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error(`Failed to load URL: ${validatedURL} with error (${errorCode}): ${errorDescription}`);
+  });
   
 
   mainWindow.addBrowserView(view);
@@ -185,7 +190,7 @@ async function createWindow() {
       const result = await verifyLicense(licenseKey, deviceId);
       if (!result.valid) {
           console.error(result.message);
-          app.quit();
+          // app.quit();
           return;
       }
   mainWindow = new BrowserWindow({
@@ -221,7 +226,20 @@ async function createWindow() {
   
   ipcMain.on('new-tab', (event) => {
     const newTabId = createNewTab('https://www.google.com');
+
+    // Switch to the new tab's BrowserView
+    views.forEach(({ id, view }) => {
+      if (id === newTabId) {
+        mainWindow.addBrowserView(view);
+        view.setBounds(getViewBounds());
+        activeViewId = id;
+      } else {
+        mainWindow.removeBrowserView(view);
+      }
+    });
+
     mainWindow.webContents.send('new-tab', newTabId);
+    mainWindow.webContents.send('switch-tab', newTabId);
     updateViewBounds();
   });
 
