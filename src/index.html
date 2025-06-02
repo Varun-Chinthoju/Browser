@@ -93,6 +93,11 @@
     #navigate:hover {
       background-color: #0b5ed7;
     }
+    #toggle-adblocker.active {
+      background-color: #ff0000;
+      color: #fff;
+      border: 1px solid #000000;
+    }
     .tab-close {
       background: transparent;
       border: none;
@@ -134,6 +139,8 @@
     <input type="text" id="url-input" placeholder="Enter URL or search" />
     <button id="navigate"><i class="fas fa-search"></i></button>
     <button id="new-tab"><i class="fas fa-plus"></i></button>
+    <button id="toggle-adblocker" title="Toggle Ad Blocker">AdBlock</button>
+    <button id="toggle-mute" title="Mute/Unmute Active Tab"><i class="fas fa-volume-up"></i></button>
   </div>
   <div id="browser-view-container" style="flex: 1;"></div>
   <script>
@@ -215,6 +222,21 @@
 
     document.getElementById('new-tab').addEventListener('click', () => {
       ipcRenderer.send('new-tab');
+    });
+
+    document.getElementById('toggle-adblocker').addEventListener('click', () => {
+      ipcRenderer.send('toggle-adblocker');
+    });
+
+    ipcRenderer.on('adblocker-status', (event, enabled) => {
+      const btn = document.getElementById('toggle-adblocker');
+      if (enabled) {
+        btn.classList.add('active');
+        btn.innerText = 'AdBlock On';
+      } else {
+        btn.classList.remove('active');
+        btn.innerText = 'AdBlock Off';
+      }
     });
 
     document.getElementById('url-input').addEventListener('keydown', (event) => {
